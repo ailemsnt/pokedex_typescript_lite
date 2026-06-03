@@ -1,9 +1,15 @@
 import { PokemonResumo } from "../models/Pokemon";
 import { formatPokemon, formatPokeName, msgSucess, msgWarning } from "../utils/textFormatters";
+import { PokemonValidator } from "../validators/PokemonValidator";
 
 export class CatalogoPokemon {
   private pokemons: PokemonResumo[] = [];
+  //ver se ta validando uppercase
   adicionarCatalogo(pokemon: PokemonResumo): void {
+    const validValue = PokemonValidator.validateValue(pokemon.id);
+    if (!validValue) {        
+      return;
+    }
     const jaExiste = this.pokemons.some((item) => item.id === pokemon.id);
 
     if (jaExiste) {
@@ -20,7 +26,7 @@ export class CatalogoPokemon {
     if (this.pokemons.length === 0) {
       console.log(msgWarning("Catálogo vazio."));
       return;
-    }
+    }    
 
     console.log("\n________________________\n ");
     console.log(  " Catálogo atual:        ");
@@ -31,13 +37,8 @@ export class CatalogoPokemon {
   }
 
   removerCatalogo(id: number): void {
-    if (id === null) {
-      console.log(msgWarning("ID do Pokémon não informado."));
-      return;
-    }
-
-    if (isNaN(id) || (id < 1)) {
-      console.log(msgWarning(`ID do Pokémon informado inválido. Valor informado: ${id}`));
+    const validValue = PokemonValidator.validateValue(id);
+    if (!validValue) {        
       return;
     }
 
