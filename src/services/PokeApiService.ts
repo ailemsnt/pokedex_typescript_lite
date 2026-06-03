@@ -6,6 +6,14 @@ const url_base = "https://pokeapi.co/api/v2/pokemon/"
 
 export async function buscarPokemon(nomeOuId: string | number): Promise<PokemonResumo | null> {
   try {
+    const validValue = PokemonValidator.validateValue(nomeOuId);
+
+    if (!validValue) {
+      console.log(msgError(`Busca por Pokémon *${nomeOuId}* não é válida.`));
+      return null;
+    } 
+
+    const valorSemZeroEsquerda = typeof nomeOuId === "string" && /^\d+$/.test(nomeOuId) ? Number(nomeOuId) : nomeOuId;
     const response = await fetch(`${url_base}${nomeOuId}`);    
     
     if (!response.ok) {
@@ -13,7 +21,9 @@ export async function buscarPokemon(nomeOuId: string | number): Promise<PokemonR
       return null;
     }
 
-    const dados = PokemonValidator.validate(await response.json());   
+    //trata status 404
+
+    const dados = PokemonValidator.validateJson(await response.json());   
     
     const pokemon: PokemonResumo = {
       id: dados.id,

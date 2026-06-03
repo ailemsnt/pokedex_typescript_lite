@@ -11,6 +11,18 @@ async function main() {
     catalogo.adicionarCatalogo(pikachu);
   }
 
+  const pikachu1 = await buscarPokemon("Pikachu");
+
+  if (pikachu1 !== null) {
+    catalogo.adicionarCatalogo(pikachu1);
+  }
+
+  const pikachu2 = await buscarPokemon("");
+
+  if (pikachu2 !== null) {
+    catalogo.adicionarCatalogo(pikachu2);
+  }
+
   const pokemonId = await buscarPokemon(39);
 
   if (pokemonId !== null) {
