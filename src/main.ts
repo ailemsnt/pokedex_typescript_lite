@@ -41,6 +41,9 @@ async function main() {
     catalogo.adicionarCatalogo(pikachuDuplicado);
   }
 
+  const infinito = await buscarPokemon("");
+  const nomeErrado = await buscarPokemon("KMPO$%EREWER  SERRWER");
+
   await buscarPokemon("pokemon-inexistente");
   catalogo.listarCatalogo();
   catalogo.removerCatalogo(25);

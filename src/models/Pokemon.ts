@@ -1,43 +1,31 @@
-interface PokeType {
-  name: string;
+import { PokemonStats } from "./PokemonStats";
+import { PokemonTypes } from "./PokemonTypes";
+export class PokemonResumo {
+  constructor(
+    public id: number,
+    public name: string,
+    public height: number,
+    public weight: number,
+    public types: PokemonTypes[],
+    public stats: PokemonStats[]	
+  ) {}
 }
-
-interface PokemonTypes { 
-  type: PokeType;
-}
-
-interface PokeStat {
-  name: string;
-}
-
-interface PokemonStats {
-  base_stat: number;
-  stat : PokeStat;
-}
-
-export interface PokemonResumo {
-	id: number;
-	name: string;
-  height: number;
-	weight: number;
-	types: PokemonTypes[];
-  stats: PokemonStats[];	
-};
-
-export interface PokemonApiResponse {
-  id: number;
-  name: string; 
-  height: number;
-  weight: number;
-  types: {
-    type: {
-      name: string;
-    }
-  }[];
-  stats: {
-    base_stat: number;
-    stat: {
-      name: string;
-    }
-  }[];
+export class PokemonApiResponse {
+  constructor(
+    public id: number,
+    public name: string, 
+    public height: number,
+    public weight: number,
+    public types: {
+      type: {
+        name: string,
+      }
+    }[],
+    public stats: {
+      base_stat: number;
+      stat: {
+        name: string;
+      }
+    }[]
+  ) {}
 }
