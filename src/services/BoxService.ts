@@ -1,39 +1,43 @@
-import { error } from "console";
 import { PokemonResumo } from "../models/Pokemon";
-import { formatPokemon, formatPokeName, msgSucess, msgWarning } from "../utils/textFormatters";
+import { formatPokemon, formatPokeName, msgError, msgSucess, msgWarning } from "../utils/textFormatters";
 import { PokemonValidator } from "../validators/PokemonValidator";
-import { LocalBoxError } from "../models/CustomErrors";
+import { LocalBoxError, ValidationError } from "../models/CustomErrors";
+import { removePokemonFromFile, savePokemonToFile, readPokemonFile } from "./FileService";
 
 export class CatalogoPokemon {
-  private pokemons: PokemonResumo[] = [];
-  //ver se ta validando uppercase
-  adicionarCatalogo(pokemon: PokemonResumo): void {
+  private pokemons: PokemonResumo[] = []; 
+
+  async adicionarCatalogo(pokemon: PokemonResumo): Promise<void> {
     try {
       const validValue = PokemonValidator.validateValue(pokemon.id);
-      if (!validValue) {        
-        return;
-      }
+      // if (!validValue) {        
+      //   return;
+      // }
       const pokemonExists = this.pokemons.some((item) => item.id === pokemon.id);
 
       if (pokemonExists) {
-        console.log(msgWarning(`${formatPokeName(pokemon.name)} já está no catálogo.`));
-        return;
+        throw new ValidationError(`${formatPokeName(pokemon.name)} já está no catálogo.`);
       }
 
       this.pokemons.push(pokemon);
+      await savePokemonToFile(pokemon);
 
       console.log(msgSucess(`${formatPokeName(pokemon.name)} adicionado ao catálogo.`));
     } catch (erro) {
       if (erro instanceof LocalBoxError) {
         console.log(erro.message);
         return;
+      } 
+      if (erro instanceof ValidationError) {
+        console.log(erro.message);
+        return;
       }  
-
+      
       console.log("Erro inesperado ao adicionar o Pokémon ao catálogo.");    
     }
   }
 
-  listarCatalogo(): void {
+  async listarCatalogo(): Promise<void> {
     try {
       if (this.pokemons.length === 0) {
         console.log(msgWarning("Catálogo vazio."));
@@ -50,13 +54,17 @@ export class CatalogoPokemon {
       if (erro instanceof LocalBoxError) {
         console.log(erro.message);
         return;
-      }
+      } 
+      if (erro instanceof ValidationError) {
+        console.log(erro.message);
+        return;
+      } 
       
       console.log("Erro inesperado ao listar o catálogo.");
     }
   }
 
-  removerCatalogo(id: number): void {
+  async removerCatalogo(id: number): Promise<void> {
     try {
       const validValue = PokemonValidator.validateValue(id);
       if (!validValue) {        
@@ -71,9 +79,16 @@ export class CatalogoPokemon {
       }
 
       this.pokemons = this.pokemons.filter((pokemon) => pokemon.id !== id);
+
+      await removePokemonFromFile(id);
+
       console.log(msgSucess(`Pokémon ${formatPokeName(pokemonRemovido.name)} removido do catálogo.`));
     } catch (erro) {
       if (erro instanceof LocalBoxError) {
+        console.log(erro.message);
+        return;
+      } 
+      if (erro instanceof ValidationError) {
         console.log(erro.message);
         return;
       } 

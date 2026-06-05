@@ -17,9 +17,9 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "start": "tsx src/main.ts",
-    "start:dev": "tsx scr/main.ts",
-    "dev": "tsx scr/main.ts"
+    "start": "node dist/main.js",
+    "start:dev": "tsx --watch dist/main.ts",
+    "dev": "node --watch dist/main.js"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

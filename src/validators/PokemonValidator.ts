@@ -2,6 +2,51 @@ import { ValidationError } from '../models/CustomErrors';
 import { PokemonResumo } from '../models/Pokemon';
 import { msgError, msgWarning } from '../utils/textFormatters';
 
+const MAX_POKE_ID = 100000;
+const MIN_POKE_ID = 1;
+const MAX_NAME_LENGTH = 50; 
+
+function validatePokeName(name: string): boolean {
+  const trimmedName = String(name).trim();
+
+  if (trimmedName === "") {
+    throw new ValidationError(msgWarning("Nome do Pokémon não informado."));        
+  }
+
+  if ((trimmedName.length < MIN_POKE_ID) || (trimmedName.length > MAX_NAME_LENGTH)){
+    throw new ValidationError(msgWarning(`Oficialmente os nomes de Pokémons não contem tantos caracteres quanto informados. Valor informado: ${name}`));        
+  }
+
+  if (/\s/.test(trimmedName)) {
+    throw new ValidationError(msgWarning("Nome não pode conter espaços."));       
+  }
+
+  if (!/^[\p{L}-]+$/u.test(trimmedName)) {
+    throw new ValidationError(msgWarning(`Nomes do Pokémon em formato inválido, não contém letras. Valor informado: ${name}`));     
+  }
+
+  return true;
+}
+
+function validatePokeId(id: number): boolean {  
+  if (isNaN(id)) {
+    throw new ValidationError(msgWarning(`ID do Pokémon informado inválido. Valor informado: ${id}`));       
+  }
+
+  if (!(Number.isFinite(id))) {
+    throw new ValidationError(msgWarning(`ID do Pokémon não pode ser inifito. Valor informado: ${id}`));     
+  }
+
+  if (!(Number.isInteger(id))) {
+    throw new ValidationError(msgWarning(`ID do Pokémon não pode ser número decimal. Valor informado: ${id}`));      
+  }
+
+  if ((Number(id) < MIN_POKE_ID) || (Number(id) > MAX_POKE_ID)){
+    throw new ValidationError(msgWarning(`IDs de Pokémons são oficialmente limitados entre ${MIN_POKE_ID} a ${MAX_POKE_ID}. Valor informado: ${id}`));                  
+  }   
+  
+  return true;
+}
 export class PokemonValidator {
   static validateJson(value: unknown): PokemonResumo | null{
     if (!this.isObject(value)) {
@@ -9,19 +54,19 @@ export class PokemonValidator {
     }
 
     if (!("id" in value)) {
-      throw new ValidationError(msgError("ID do Pokemón inválido."));      
+      throw new ValidationError(msgError("ID do Pokemón não encontrado."));      
     }
 
     if (!("name" in value)) {
-      throw new ValidationError(msgError("Nome do Pokemón inválido."));      
+      throw new ValidationError(msgError("Nome do Pokemón não encontrado."));      
     }
 
     if (!("height" in value)) {
-      throw new ValidationError(msgError("Altura do Pokemón inválido."));      
+      throw new ValidationError(msgError("Altura do Pokemón não encontrada."));      
     }
 
     if (!("weight" in value)) {
-      throw new ValidationError(msgError("Peso do Pokemón inválido."));    
+      throw new ValidationError(msgError("Peso do Pokemón não encontrado."));    
     }
 
     if (!("types" in value)) {
@@ -47,54 +92,21 @@ export class PokemonValidator {
       types: "types" in value ? value.types as PokemonResumo["types"] : [],
       stats: "stats" in value ? value.stats as PokemonResumo["stats"] : []
     };    
-  }
+  } 
 
   static validateValue(nameOrId : string | number): boolean {
     if ((nameOrId === null) || (nameOrId === undefined)){
       throw new ValidationError(msgWarning("ID ou Nome do Pokémon não informado."));     
     }
 
-    if ((typeof nameOrId !== "string") && (typeof nameOrId !== "number")) {
-      throw new ValidationError(msgWarning(`ID ou Nome do Pokémon em formato inválido. Valor informado: ${nameOrId}`));      
-    }
-
-    if (typeof nameOrId === "number") {
-      if (isNaN(nameOrId)) {
-        throw new ValidationError(msgWarning(`ID do Pokémon informado inválido. Valor informado: ${nameOrId}`));       
-      }
-
-      if (!(Number.isFinite(nameOrId))) {
-        throw new ValidationError(msgWarning(`ID do Pokémon não pode ser inifito. Valor informado: ${nameOrId}`));     
-      }
-
-      if (!(Number.isInteger(nameOrId))) {
-        throw new ValidationError(msgWarning(`ID do Pokémon não pode ser número decimal. Valor informado: ${nameOrId}`));      
-      }
-
-      if ((Number(nameOrId) < 1) || (Number(nameOrId) > 100000)){
-          throw new ValidationError(msgWarning(`IDs de Pokémons são oficialmente limitados entre 1 a 100000. Valor informado: ${nameOrId}`));                  
-      }     
-    }
-    
-    if (typeof nameOrId === "string") {
-      if (String(nameOrId).trim() === '') {
-          throw new ValidationError(msgWarning("Nome do Pokémon não informado."));        
-      }
-
-      if ((String(nameOrId).trim().length < 1) || (String(nameOrId).trim().length > 50)){
-          throw new ValidationError(msgWarning(`Oficialmente os nomes de Pokémons não contem tantos caracteres quanto informados. Valor informado: ${nameOrId}`));        
-      }
-
-      if (/\s/.test(nameOrId)) {
-        throw new ValidationError(msgWarning("Nome não pode conter espaços."));       
-      }
-
-      if (!/^[\p{L}-]+$/u.test(String(nameOrId).trim())) {
-        throw new ValidationError(msgWarning(`Nomes do Pokémon em formato inválido, não contém letras. Valor informado: ${nameOrId}`));     
-      }
-    }
-    
-    return true;
+    switch (typeof nameOrId) {
+      case "number":
+        return validatePokeId(nameOrId);
+      case "string":
+        return validatePokeName(nameOrId);
+      default:
+        throw new ValidationError(msgWarning(`ID ou Nome do Pokémon em formato inválido. Valor informado: ${nameOrId}`));    
+    }    
   }
 
   private static isObject(value: unknown): value is object {
