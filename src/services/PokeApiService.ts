@@ -1,7 +1,7 @@
 import { PokemonApiResponse, PokemonResumo } from "./../models/Pokemon";
 import { formatPokemon, msgError } from "../utils/textFormatters";
 import { PokemonValidator } from "../validators/PokemonValidator";
-import { ApiError, ValidationError } from "../models/CustomErrors";
+import { ApiError, LocalBoxError, ValidationError } from "../models/CustomErrors";
 
 const url_base = "https://pokeapi.co/api/v2/pokemon/";
 
@@ -49,7 +49,16 @@ export async function buscarPokemon(
       }
     }
   } catch (erro) {
-    console.log(msgError(`Não foi possível buscar o Pokémon *${nomeOuId}*.`));
+    if (erro instanceof ApiError) {
+      console.log(erro.message);
+      return null;
+    } 
+    if (erro instanceof ValidationError) {
+      console.log(erro.message);
+      return null;
+    }  
+    
+    console.log("Erro inesperado ao buscar o Pokémon no catálogo."); 
     return null;
   }
 }
