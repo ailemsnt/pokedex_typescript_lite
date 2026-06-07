@@ -1,12 +1,17 @@
 import { PokemonApiResponse } from './../models/Pokemon';
 import { Interface } from 'node:readline/promises';
 import { CatalogoPokemon } from "../services/BoxService";
-import { buscarPokemon } from "../services/PokeApiService";
-import { deleteFileDataBase } from '../services/FileService';
+import { searchPokemon } from "../services/PokeApiService";
+import { formatPokeName, msgError, msgSucess } from '../utils/textFormatters';
+import { PokemonValidator } from '../validators/PokemonValidator';
 
-function validateSelection(operation: number): boolean {
+function validateSelectedMenu(operation: number): boolean {
   const operationSelected = Number(operation);
   return Number.isInteger(operationSelected) && operationSelected >= 1 && operationSelected <= 4;
+}
+
+function validateSelectedId(operation: number) : boolean { 
+  return Number.isInteger(operation) && operation > 0 && operation <= 100000;
 }
 
 export async function menuController(interfaceConsole: Interface): Promise<boolean> {
@@ -23,7 +28,7 @@ export async function menuController(interfaceConsole: Interface): Promise<boole
     console.log(" Capture Pokémons e busque informações na PokéApi.");
     console.log(" Se prepare para ser um Mestre Pokémon!\n");
     console.log(" Opções:");
-    console.log(" 1. Buscar Pokémon ");
+    console.log(" 1. Capturar Pokémon ");
     console.log(" 2. Ver pokémons capturados");
     console.log(" 3. Remover pokémon da sua pokédex");
     console.log(" 4. Sair");
@@ -32,12 +37,6 @@ export async function menuController(interfaceConsole: Interface): Promise<boole
     const resultOperation = await interfaceConsole.question(
       "Digite a opção escolhida:\n", 
     );
-  
-    if (!validateSelection(Number(resultOperation))) {
-      console.log("Opção inválida. Por favor, escolha uma opção válida.");
-      await interfaceConsole.question('Pressione ENTER para prosseguir...');
-      continue;
-    }
 
     switch (resultOperation) {
       case "1": {  
@@ -46,51 +45,52 @@ export async function menuController(interfaceConsole: Interface): Promise<boole
         );
 
         const pokemonNameOrId = /^\d+$/.test(nameOrId.trim()) ? Number(nameOrId): nameOrId.toLocaleLowerCase();
-        const pokemon = await buscarPokemon(pokemonNameOrId);
+        const pokemonResponse = await searchPokemon(pokemonNameOrId);        
 
-        if (pokemon !== null) {                    
-          await catalogo.adicionarCatalogo(pokemon); 
-          }
+        if (!pokemonResponse) { 
           break;
-      }
-      case "2": {
-        await catalogo.listarCatalogo();
+        }
+        
+        console.log(msgSucess(`Pokémon encontrado: ${formatPokeName(pokemonResponse.name)}`));
+        await catalogo.addCatalog(pokemonResponse);   
+
         break;
       }
-      case "3": {        
-        const nameOrId = await interfaceConsole.question(
-          "Digite o ID do Pokémon que deseja remover:\n",
-        );
-        //const validValue = PokemonValidator.validateValue(nameOrId); 
-       // const validId = 0;
-       // if (!validValue) {
-       //   console.log(`Busca por Pokémon *${nameOrId}* não é válida.`);
-         //  throw new ApiError(`Busca por Pokémon *${nameOrId}* não é válida.`);     
-       // }
+      case "2": {        
+        await catalogo.listCatalog();
+        break;
+      }
+      case "3": {   
+        const pokemonExist = await catalogo.listCatalog();
 
-        const pokemonId = Number(nameOrId);
-        
-        if (!Number.isInteger(pokemonId) || pokemonId <= 0) {
-          console.log("ID inválido. Digite um número inteiro positivo.");
-          break; // ou continue, dependendo do seu loop
+        if (!pokemonExist) {
+          break;
         }
 
-        await catalogo.removerCatalogo(pokemonId);
+        const id = await interfaceConsole.question(
+          "Digite o ID do Pokémon que deseja remover:\n",
+        );
+
+        await catalogo.removeCatalog(Number(id));
+        await catalogo.listCatalog();
         break;        
       }
       case "4": {
-        console.log("Saindo...");   
-        deleteFileDataBase();    
+        console.log("Saindo...");             
         running = false;   
         break;         
       }
       default: {
-        console.log("Opção inválida. Por favor, escolha uma opção válida.");
+        console.log(msgError("Opção inválida. Por favor, escolha uma opção válida."));
         break;
-      }
-      // await interfaceConsole.question('Pressione ENTER para prosseguir...');
-      // console.clear();
-    }    
+      }     
+    }   
+    
+    if (running) {
+      await interfaceConsole.question('\n> Pressione ENTER para prosseguir...');
+      continue;
+    }
+
   }
   return running;
 }

@@ -1,4 +1,4 @@
-class PokeStat {
+export class PokeStat {
   constructor(
     public name: string
   ){}
@@ -7,6 +7,6 @@ class PokeStat {
 export class PokemonStats {
   constructor(
     public base_stat: number,
-    public stat: PokeStat[]
+    public stat: PokeStat
   ) {}
 }
