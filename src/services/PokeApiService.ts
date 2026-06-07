@@ -1,15 +1,15 @@
-import { PokemonApiResponse, PokemonResumo } from "./../models/Pokemon";
-import { formatPokemon, msgError } from "../utils/textFormatters";
+import { PokemonApiResponse } from "./../models/Pokemon";
 import { PokemonValidator } from "../validators/PokemonValidator";
 import { ApiError, LocalBoxError, ValidationError } from "../models/CustomErrors";
+import { SearchValidator } from "../validators/SearchValidator";
 
 const url_base = "https://pokeapi.co/api/v2/pokemon/";
 
-export async function buscarPokemon(
+export async function searchPokemon(
   nomeOuId: string | number,
-): Promise<PokemonResumo | null> {
+): Promise<PokemonApiResponse| null> {
   try {
-    const validValue = PokemonValidator.validateValue(nomeOuId);
+    const validValue = SearchValidator.validateValue(nomeOuId);
 
     if (!validValue) {
       throw new ApiError(`Busca por Pokémon *${nomeOuId}* não é válida.`);     
@@ -18,7 +18,7 @@ export async function buscarPokemon(
     const valueWithoutLeftZero =
       typeof nomeOuId === "string" && /^\d+$/.test(nomeOuId)
         ? Number(nomeOuId)
-        : nomeOuId;
+        : nomeOuId.toString().toLocaleLowerCase().trim();
 
     const response = await fetch(`${url_base}${valueWithoutLeftZero}`);
 
@@ -30,13 +30,21 @@ export async function buscarPokemon(
           throw new ApiError(`Retorno inválido.`);         
         }
 
-        const pokemon = PokemonValidator.validateJson(responseApi);
+        const dados = PokemonValidator.validateJson(responseApi);
 
-        if (!pokemon) {
+        if (!dados) {
           throw new ApiError(`Retorno inválido.`);         
         }
 
-        return pokemon;
+        return new PokemonApiResponse(
+          dados.id,
+          dados.name,
+          dados.height,
+          dados.weight,
+          dados.types.map((type) => ({type: {name: String(type.type.name)}})),
+          dados.stats.map((stat) => ({base_stat: Number(stat.base_stat), stat: {name: String(stat.stat.name)}})),
+        );//retorno deve gravar o json format
+        
       }
       case 400: {
         throw new ValidationError(`Requisição inválida.`);     

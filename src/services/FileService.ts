@@ -1,36 +1,25 @@
-import { PokemonResumo } from "../models/Pokemon";
+import { PokemonItem } from "../models/Pokemon";
 import { readFile, writeFile } from "node:fs/promises";
-import { formatPokeName } from "../utils/textFormatters";
+import { formatPokeName, msgError, msgSucess } from "../utils/textFormatters";
 import { FILE_DATABASE } from "../config/constantes";
 import { LocalBoxError, ValidationError } from "../models/CustomErrors";
 
-export function deleteFileDataBase() : void {
-	try {
-    writeFile(FILE_DATABASE, "");
-	} catch (erro){
-		if (erro instanceof LocalBoxError) {
-			console.log(erro.message);
-			return;
-		} 	
-
-    console.log("Não foi possível apagar o arquivo de dados.");
-	}
-}
-
-export async function readPokemonFile(): Promise<PokemonResumo[]> {
+export async function readPokemonFile(): Promise<PokemonItem[]> {
   try {
     const pokeText = await readFile(FILE_DATABASE, { encoding: "utf-8" });
+		if (String(pokeText).trim().length === 0){
+			return [];
+		}
     return JSON.parse(pokeText);
-  } catch {
-    console.log("Não foi possível ler os dados do arquivo.");
+  } catch (erro) {
+    console.log(msgError("Não foi possível ler os dados do arquivo."));
     return [];
   }
 }
 
-export async function savePokemonToFile(pokemon: PokemonResumo): Promise<void> {
+export async function savePokemonToFile(pokemon: PokemonItem): Promise<boolean> {
 	try {
 		const pokemons = await readPokemonFile();
-
 		if (!pokemons) {
 			await writeFile(FILE_DATABASE, JSON.stringify([pokemon]), {
 				encoding: "utf-8",
@@ -38,13 +27,11 @@ export async function savePokemonToFile(pokemon: PokemonResumo): Promise<void> {
 		}
 
 		const pokemonExists = pokemons.some(
-			(pokeFile: PokemonResumo) => pokeFile.id === pokemon.id,
+			(pokeFile: PokemonItem) => pokeFile.id === pokemon.id,
 		);
-		if (pokemonExists) {
-			console.log(
-				`Pokémon informado "${formatPokeName(pokemon.name)}" já existe no catálogo e não será gravado no arquivo.`,
-			);
-			return;
+
+		if (pokemonExists) {		
+			return false;
 		}
 
 		pokemons.push(pokemon);
@@ -53,41 +40,31 @@ export async function savePokemonToFile(pokemon: PokemonResumo): Promise<void> {
 			encoding: "utf-8",
 		});
 
-		console.log(
-			`Pokémon "${pokemon.id}" - "${formatPokeName(pokemon.name) ? pokemon.name : "-Nome não informado-"}" incluído no arquivo com sucesso!`,
-		);
-	} catch (erro) {
-		if (erro instanceof LocalBoxError) {
-			console.log(erro.message);
-			return;
-		} 
-		if (erro instanceof ValidationError) {
-			console.log(erro.message);
-			return;
-		} 
-		console.log("Não foi possível salvar os dados no arquivo: ", erro);
+		return true;
+	} catch (erro) {		
+		console.log("Não foi possível salvar os dados no arquivo: ");
+		return false;
 	}
 }
 
-export async function removePokemonFromFile(id: number): Promise<boolean> {
+export async function removePokemonFromFile(id: number): Promise<PokemonItem | null> {
 	try {
 		const pokemons = await readPokemonFile();
 
-		const pokemonExists = pokemons.some((pokemon) => pokemon.id === id);
+		const pokemonToRemove = pokemons.find((pokemon) => pokemon.id === id);
 
-		if (!pokemonExists) {			
-			return false;
+		if (!pokemonToRemove) {			
+			return null;
 		}
 
-    const pokemonUpdate = pokemons.filter((pokemon) => pokemon.id !== id);
+    const pokemonRemoved = pokemons.filter((pokemon) => pokemon.id !== id);
 
-		await writeFile(FILE_DATABASE, JSON.stringify(pokemonUpdate), {
+		await writeFile(FILE_DATABASE, JSON.stringify(pokemonRemoved), {
 			encoding: "utf-8",
 		});
-
-		return true;
+		return pokemonToRemove;
 	} catch {
 		console.log("Não foi possível ler os dados do arquivo.");	
-		return false;
+		return null;
 	}
 }

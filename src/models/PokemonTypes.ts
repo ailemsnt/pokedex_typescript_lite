@@ -1,4 +1,4 @@
-class PokeType {
+export class PokeType {
   constructor(
     public name: string
   ){}
@@ -6,6 +6,6 @@ class PokeType {
 
 export class PokemonTypes {
   constructor(
-    public type: PokeType[]
+    public type: PokeType
   ) {}
 }
